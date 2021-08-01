@@ -25,4 +25,5 @@ public class TokenEntity {
     private String agent;
     private Date issuedAt;
     private Date expires;
+    private Boolean enabled;
 }

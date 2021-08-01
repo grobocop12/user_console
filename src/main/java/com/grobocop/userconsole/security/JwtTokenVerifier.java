@@ -9,6 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import javax.security.sasl.AuthenticationException;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -28,6 +29,7 @@ public class JwtTokenVerifier extends OncePerRequestFilter {
     private final static String JWT_IP_HEADER = "ip";
 
     private final KeyProvider keyProvider;
+    private final BlacklistedTokenService blacklistedTokenService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -42,6 +44,9 @@ public class JwtTokenVerifier extends OncePerRequestFilter {
                     .setSigningKey(keyProvider.getKey())
                     .build()
                     .parseClaimsJws(token);
+            if(blacklistedTokenService.isBlackListed(claimsJws.getBody().getSubject(), token)) {
+                throw new IllegalStateException("Invalid token.");
+            }
             validateHeader(claimsJws.getHeader(), request);
             setAuthentication(claimsJws.getBody());
             filterChain.doFilter(request, response);

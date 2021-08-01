@@ -13,6 +13,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.transaction.Transactional;
 import java.util.Collection;
 import java.util.Date;
 import java.util.UUID;
@@ -42,17 +43,13 @@ public class JwtTokenService {
         this.tokenRepository = tokenRepository;
     }
 
+    @Transactional
     public TokenEntity prepareTokenResponse(final AuthenticationRequest authRequest, final HttpServletRequest servletRequest) {
-        Authentication authResult;
-        try {
-            authResult = authenticator.authenticate(authRequest.getUsername(),
-                    authRequest.getPassword());
-        } catch (BadCredentialsException e) {
-            throw new AuthenticationException("Wrong username or password", e);
-        }
+        final Authentication authResult = authenticateUser(authRequest.getUsername(), authRequest.getPassword());
         final TokenEntity tokenPrototype = prepareTokenEntity(authResult.getName(), servletRequest);
         final String token = buildAccessToken(tokenPrototype, authResult.getAuthorities());
         tokenPrototype.setAccessToken(token);
+        blacklistTokensForUsername(authResult.getName());
         saveTokenEntity(tokenPrototype);
         return tokenPrototype;
     }
@@ -70,7 +67,23 @@ public class JwtTokenService {
                 .agent(header)
                 .issuedAt(issuedDate)
                 .expires(expirationDate)
+                .enabled(true)
                 .build();
+    }
+
+    private Authentication authenticateUser(final String username, final String password) {
+        try {
+            return authenticator.authenticate(username,
+                    password);
+        } catch (BadCredentialsException e) {
+            throw new AuthenticationException("Wrong username or password", e);
+        }
+    }
+
+    private void blacklistTokensForUsername(String username) {
+        Iterable<TokenEntity> tokens = tokenRepository.findAllByUsername(username);
+        tokens.forEach(t -> t.setEnabled(false));
+        tokenRepository.saveAll(tokens);
     }
 
     private void saveTokenEntity(final TokenEntity entity) {
@@ -89,5 +102,6 @@ public class JwtTokenService {
                 .signWith(keyProvider.getKey())
                 .compact();
     }
+
 
 }

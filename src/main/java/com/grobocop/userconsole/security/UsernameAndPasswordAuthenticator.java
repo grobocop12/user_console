@@ -13,4 +13,5 @@ public class UsernameAndPasswordAuthenticator {
         final Authentication auth = new UsernamePasswordAuthenticationToken(username, password);
         return authenticationManager.authenticate(auth);
     }
+
 }
