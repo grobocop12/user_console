@@ -1,10 +1,6 @@
 package com.grobocop.userconsole.security;
 
-import com.grobocop.userconsole.exception.AuthorizationException;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.JwsHeader;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -49,7 +45,7 @@ public class JwtTokenVerifier extends OncePerRequestFilter {
             validateHeader(claimsJws.getHeader(), request);
             setAuthentication(claimsJws.getBody());
             filterChain.doFilter(request, response);
-        } catch (Exception e) {
+        } catch (JwtException | IllegalStateException e) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Invalid token.");
         }
 
@@ -60,7 +56,7 @@ public class JwtTokenVerifier extends OncePerRequestFilter {
         final String agent = (String) header.get(JWT_AGENT_HEADER);
         final String servletAgent = request.getHeader(USER_AGENT_HEADER);
         if (!request.getRemoteAddr().equals(ip) || !servletAgent.equals(agent)) {
-            throw new AuthorizationException("Token cannot be trusted");
+            throw new IllegalStateException("Token cannot be trusted");
         }
     }
 

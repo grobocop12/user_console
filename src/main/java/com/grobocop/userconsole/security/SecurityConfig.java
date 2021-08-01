@@ -38,7 +38,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .addFilterAfter(tokenVerifier, UsernamePasswordAuthenticationFilter.class)
                 .authorizeRequests()
-                .antMatchers("/api/auth/login").permitAll();
+                .antMatchers("/api/auth/login").permitAll()
+                .antMatchers("/test").authenticated();
     }
 
     @Bean
