@@ -2,12 +2,14 @@ package com.grobocop.userconsole.security;
 
 import com.grobocop.userconsole.data.TokenEntity;
 import com.grobocop.userconsole.data.TokenRepository;
+import com.grobocop.userconsole.exception.AuthenticationException;
 import com.grobocop.userconsole.util.DateAndTimeProvider;
 import com.grobocop.userconsole.web.request.AuthenticationRequest;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
@@ -41,10 +43,12 @@ public class JwtTokenService {
     }
 
     public TokenEntity prepareTokenResponse(final AuthenticationRequest authRequest, final HttpServletRequest servletRequest) {
-        final Authentication authResult = authenticator.authenticate(authRequest.getUsername(),
-                authRequest.getPassword());
-        if (!authResult.isAuthenticated()) {
-            throw new RuntimeException("Wrong username or password!");
+        Authentication authResult;
+        try {
+            authResult = authenticator.authenticate(authRequest.getUsername(),
+                    authRequest.getPassword());
+        } catch (BadCredentialsException e) {
+            throw new AuthenticationException("Wrong username or password", e);
         }
         final TokenEntity tokenPrototype = prepareTokenEntity(authResult.getName(), servletRequest);
         final String token = buildAccessToken(tokenPrototype, authResult.getAuthorities());
