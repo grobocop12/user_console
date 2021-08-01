@@ -6,17 +6,13 @@ import com.grobocop.userconsole.exception.AuthenticationException;
 import com.grobocop.userconsole.util.DateAndTimeProvider;
 import com.grobocop.userconsole.web.request.AuthenticationRequest;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.util.Collection;
 import java.util.Date;
 import java.util.UUID;
@@ -25,19 +21,23 @@ import java.util.UUID;
 public class JwtTokenService {
     private static final long FIFTEEN_MINUTES_IN_MILLISECONDS = 15 * 60 * 1000;
     private static final String AGENT_HEADER = "user-agent";
+    private static final String JWT_AGENT_HEADER = "agent";
+    private final static String JWT_IP_HEADER = "ip";
+    private final static String JWT_ID_HEADER = "id";
+    private final static String JWT_AUTHORITIES_CLAIM = "authorities";
 
     private final UsernameAndPasswordAuthenticator authenticator;
-    private final String secretKey;
+    private final KeyProvider keyProvider;
     private final DateAndTimeProvider dateAndTimeProvider;
     private final TokenRepository tokenRepository;
 
     @Autowired
     public JwtTokenService(final UsernameAndPasswordAuthenticator authenticator,
-                           @Value("${secretKey}") final String secretKey,
+                           final KeyProvider keyProvider,
                            final DateAndTimeProvider dateAndTimeProvider,
                            final TokenRepository tokenRepository) {
         this.authenticator = authenticator;
-        this.secretKey = secretKey;
+        this.keyProvider = keyProvider;
         this.dateAndTimeProvider = dateAndTimeProvider;
         this.tokenRepository = tokenRepository;
     }
@@ -78,16 +78,15 @@ public class JwtTokenService {
     }
 
     private String buildAccessToken(final TokenEntity tokenPrototype, final Collection<? extends GrantedAuthority> authorities) {
-        final Key key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
         return Jwts.builder()
-                .setHeaderParam("id", tokenPrototype.getId())
-                .setHeaderParam("ip", tokenPrototype.getIp())
-                .setHeaderParam("agent", tokenPrototype.getAgent())
+                .setHeaderParam(JWT_ID_HEADER, tokenPrototype.getId())
+                .setHeaderParam(JWT_IP_HEADER, tokenPrototype.getIp())
+                .setHeaderParam(JWT_AGENT_HEADER, tokenPrototype.getAgent())
                 .setSubject(tokenPrototype.getUsername())
-                .claim("authorities", authorities)
+                .claim(JWT_AUTHORITIES_CLAIM, authorities)
                 .setIssuedAt(tokenPrototype.getIssuedAt())
                 .setExpiration(tokenPrototype.getExpires())
-                .signWith(key)
+                .signWith(keyProvider.getKey())
                 .compact();
     }
 
