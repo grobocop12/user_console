@@ -1,7 +1,6 @@
 package com.grobocop.userconsole.security;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -12,17 +11,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 @EnableWebSecurity
+@AllArgsConstructor
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
-
     private final PasswordEncoder passwordEncoder;
-    private final String secretKey;
-
-    @Autowired
-    public SecurityConfig(PasswordEncoder passwordEncoder,
-                          @Value("${secretKey}") final String secretKey) {
-        this.passwordEncoder = passwordEncoder;
-        this.secretKey = secretKey;
-    }
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -44,7 +35,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public JwtTokenService jwtTokenService() throws Exception {
-        return new JwtTokenService(authenticationManager(), secretKey);
+    public UsernameAndPasswordAuthenticator usernameAndPasswordAuthenticator() throws Exception {
+        return new UsernameAndPasswordAuthenticator(authenticationManager());
     }
 }
