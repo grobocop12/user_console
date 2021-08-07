@@ -1,8 +1,10 @@
-package com.grobocop.userconsole.security;
+package com.grobocop.userconsole.security.jwt;
 
 import com.grobocop.userconsole.data.TokenEntity;
 import com.grobocop.userconsole.data.TokenRepository;
 import com.grobocop.userconsole.exception.AuthenticationException;
+import com.grobocop.userconsole.security.KeyProvider;
+import com.grobocop.userconsole.security.UsernameAndPasswordAuthenticator;
 import com.grobocop.userconsole.util.DateAndTimeProvider;
 import com.grobocop.userconsole.web.request.AuthenticationRequest;
 import io.jsonwebtoken.Jwts;

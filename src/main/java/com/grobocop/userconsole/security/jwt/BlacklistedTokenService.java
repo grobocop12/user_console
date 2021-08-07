@@ -1,4 +1,4 @@
-package com.grobocop.userconsole.security;
+package com.grobocop.userconsole.security.jwt;
 
 import com.grobocop.userconsole.data.TokenEntity;
 import com.grobocop.userconsole.data.TokenRepository;

@@ -1,5 +1,6 @@
-package com.grobocop.userconsole.security;
+package com.grobocop.userconsole.security.jwt;
 
+import com.grobocop.userconsole.security.KeyProvider;
 import io.jsonwebtoken.*;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -9,7 +10,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.security.sasl.AuthenticationException;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
