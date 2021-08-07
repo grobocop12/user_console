@@ -28,7 +28,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
                 username,
                 passwordEncoder.encode(rawPassword),
                 "USER",
-                false,
+                true,
                 true);
         return userRepository.save(user);
     }
@@ -39,7 +39,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
                 username,
                 passwordEncoder.encode(rawPassword),
                 "USER,ADMIN",
-                false,
+                true,
                 true);
         return userRepository.save(user);
     }

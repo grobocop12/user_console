@@ -39,7 +39,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .addFilterAfter(tokenVerifier, UsernamePasswordAuthenticationFilter.class)
                 .authorizeRequests()
-                .antMatchers("/api/auth/login").permitAll()
+                .antMatchers("/api/auth/login/**").permitAll()
+                .antMatchers("/api/auth/refresh/**").hasRole("REFRESH")
                 .antMatchers("/test").permitAll();
     }
 

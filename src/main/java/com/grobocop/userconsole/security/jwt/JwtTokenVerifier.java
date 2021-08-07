@@ -1,7 +1,10 @@
 package com.grobocop.userconsole.security.jwt;
 
 import com.grobocop.userconsole.security.KeyProvider;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -24,9 +27,6 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class JwtTokenVerifier extends OncePerRequestFilter {
     private final static String AUTHORIZATION_HEADER = "Authorization";
-    private final static String USER_AGENT_HEADER = "user-agent";
-    private final static String JWT_AGENT_HEADER = "agent";
-    private final static String JWT_IP_HEADER = "ip";
 
     private final KeyProvider keyProvider;
     private final BlacklistedTokenService blacklistedTokenService;
@@ -44,25 +44,15 @@ public class JwtTokenVerifier extends OncePerRequestFilter {
                     .setSigningKey(keyProvider.getKey())
                     .build()
                     .parseClaimsJws(token);
-            if(blacklistedTokenService.isBlackListed(claimsJws.getBody().getSubject(), token)) {
+            if (blacklistedTokenService.isBlackListed(claimsJws.getBody().getSubject(), token)) {
                 throw new IllegalStateException("Invalid token.");
             }
-            validateHeader(claimsJws.getHeader(), request);
             setAuthentication(claimsJws.getBody());
             filterChain.doFilter(request, response);
         } catch (JwtException | IllegalStateException e) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Invalid token.");
         }
 
-    }
-
-    private void validateHeader(JwsHeader header, HttpServletRequest request) {
-        final String ip = (String) header.get(JWT_IP_HEADER);
-        final String agent = (String) header.get(JWT_AGENT_HEADER);
-        final String servletAgent = request.getHeader(USER_AGENT_HEADER);
-        if (!request.getRemoteAddr().equals(ip) || !servletAgent.equals(agent)) {
-            throw new IllegalStateException("Token cannot be trusted");
-        }
     }
 
     private void setAuthentication(final Claims claims) {

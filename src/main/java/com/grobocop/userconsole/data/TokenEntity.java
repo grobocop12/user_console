@@ -21,9 +21,10 @@ public class TokenEntity {
     private String username;
     @Column(columnDefinition = "VARCHAR(500)")
     private String accessToken;
-    private String ip;
-    private String agent;
+    @Column(columnDefinition = "VARCHAR(500)")
+    private String refreshToken;
     private Date issuedAt;
-    private Date expires;
+    private Date accessTokenExpiration;
+    private Date refreshTokenExpiration;
     private Boolean enabled;
 }
