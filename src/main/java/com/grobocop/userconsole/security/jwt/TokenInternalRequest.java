@@ -13,7 +13,7 @@ import java.util.Date;
 @Setter
 @Builder
 @AllArgsConstructor
-public class JwtInternalRequest {
+public class TokenInternalRequest {
     private String username;
     private Collection<? extends GrantedAuthority> authorities;
     private Date issuedAt;

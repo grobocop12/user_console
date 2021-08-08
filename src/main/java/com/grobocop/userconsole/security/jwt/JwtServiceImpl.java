@@ -12,6 +12,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -21,19 +23,27 @@ import static java.util.Collections.singletonList;
 
 @Service
 @RequiredArgsConstructor
-public class JwtTokenServiceImpl implements JwtTokenService {
-    private static final long FIFTEEN_MINUTES_IN_MILLISECONDS = 15 * 60 * 1000;
+public class JwtServiceImpl implements JwtService {
+    private static final long FIFTEEN_MINUTES_IN_MILLISECONDS = 1 * 60 * 1000;
     private static final long ONE_HOUR_IN_MILLISECONDS = 60 * 60 * 1000;
     private final static String JWT_AUTHORITIES_CLAIM = "authorities";
 
     private final UsernameAndPasswordAuthenticator authenticator;
     private final KeyProvider keyProvider;
     private final DateAndTimeProvider dateAndTimeProvider;
+    private final UserDetailsService userDetailsService;
 
     @Override
-    public TokenResponse createAccessTokenAndRefreshToken(String username, String password) {
+    public TokenResponse createAccessTokenAndRefreshToken(final String username, final String password) {
         final Authentication authentication = authenticateUser(username, password);
-        final JwtInternalRequest internalRequest = prepareInternalRequest(authentication.getName(), authentication.getAuthorities());
+        final TokenInternalRequest internalRequest = prepareInternalRequest(authentication.getName(), authentication.getAuthorities());
+        return processInternalRequest(internalRequest);
+    }
+
+    @Override
+    public TokenResponse refreshToken(final String username) {
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        final TokenInternalRequest internalRequest = prepareInternalRequest(userDetails.getUsername(), userDetails.getAuthorities());
         return processInternalRequest(internalRequest);
     }
 
@@ -45,9 +55,9 @@ public class JwtTokenServiceImpl implements JwtTokenService {
         }
     }
 
-    private JwtInternalRequest prepareInternalRequest(String username, Collection<? extends GrantedAuthority> authorities) {
+    private TokenInternalRequest prepareInternalRequest(String username, Collection<? extends GrantedAuthority> authorities) {
         final Date currentDate = dateAndTimeProvider.getCurrentDate();
-        return JwtInternalRequest.builder()
+        return TokenInternalRequest.builder()
                 .username(username)
                 .authorities(authorities)
                 .issuedAt(currentDate)
@@ -56,16 +66,17 @@ public class JwtTokenServiceImpl implements JwtTokenService {
                 .build();
     }
 
-    private TokenResponse processInternalRequest(JwtInternalRequest internalRequest) {
+    private TokenResponse processInternalRequest(TokenInternalRequest internalRequest) {
         final TokenEntity tokenEntity = createTokenEntity(internalRequest);
         return TokenResponse.builder()
                 .accessToken(tokenEntity.getAccessToken())
                 .refreshToken(tokenEntity.getRefreshToken())
-                .expires(internalRequest.getAccessTokenExpiration())
+                .accessTokenExpiration(internalRequest.getAccessTokenExpiration().getTime())
+                .refreshTokenExpiration(internalRequest.getRefreshTokenExpiration().getTime())
                 .build();
     }
 
-    private TokenEntity createTokenEntity(JwtInternalRequest internalRequest) {
+    private TokenEntity createTokenEntity(TokenInternalRequest internalRequest) {
         final String accessToken = Jwts.builder()
                 .setSubject(internalRequest.getUsername())
                 .claim(JWT_AUTHORITIES_CLAIM, internalRequest.getAuthorities())

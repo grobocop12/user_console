@@ -2,8 +2,6 @@ package com.grobocop.userconsole.web.response;
 
 import lombok.*;
 
-import java.util.Date;
-
 @Getter
 @Setter
 @Builder
@@ -12,5 +10,6 @@ import java.util.Date;
 public class TokenResponse {
     private String accessToken;
     private String refreshToken;
-    private Date expires;
+    private Long accessTokenExpiration;
+    private Long refreshTokenExpiration;
 }
