@@ -1,6 +1,5 @@
 package com.grobocop.userconsole.web;
 
-import com.grobocop.userconsole.data.TokenRepository;
 import com.grobocop.userconsole.security.jwt.JwtCreator;
 import com.grobocop.userconsole.security.jwt.TokenService;
 import com.grobocop.userconsole.web.request.AuthenticationRequest;

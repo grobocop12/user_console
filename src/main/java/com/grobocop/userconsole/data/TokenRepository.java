@@ -8,6 +8,8 @@ import java.util.Date;
 public interface TokenRepository extends CrudRepository<TokenEntity, String> {
     Collection<TokenEntity> findAllByUsername(String username);
 
-    Collection<TokenEntity> findAllByUsernameAndEnabled(final String username,
-                                                        final boolean enabled);
+    Collection<TokenEntity> findAllByUsernameAndEnabled(String username,
+                                                        boolean enabled);
+
+    Collection<TokenEntity> findAllByRefreshTokenExpirationBefore(Date date);
 }

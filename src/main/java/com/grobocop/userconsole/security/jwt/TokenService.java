@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,4 +36,11 @@ public class TokenService {
                 || t.getRefreshToken().equals(token));
     }
 
+    public Collection<TokenEntity> findTokensExpiringBefore(Date date) {
+        return tokenRepository.findAllByRefreshTokenExpirationBefore(date);
+    }
+
+    public void deleteTokens(Collection<TokenEntity> tokens) {
+        tokenRepository.deleteAll(tokens);
+    }
 }

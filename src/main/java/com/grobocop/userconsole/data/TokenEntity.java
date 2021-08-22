@@ -16,7 +16,7 @@ import java.util.Date;
 public class TokenEntity {
     @Id
     @GeneratedValue(generator = "token_id_generator")
-    @GenericGenerator(name="token_id_generator", strategy = "sequence")
+    @GenericGenerator(name = "token_id_generator", strategy = "sequence")
     private Long id;
     private String username;
     @Column(columnDefinition = "VARCHAR(1000)")

@@ -41,6 +41,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers("/api/auth/login/**").permitAll()
                 .antMatchers("/api/auth/refresh/**").hasRole("REFRESH")
+                .antMatchers("/api/auth/logout/**").hasRole("USER")
                 .antMatchers("/test/blacklist").permitAll()
                 .antMatchers("/test/resource").hasRole("USER");
     }

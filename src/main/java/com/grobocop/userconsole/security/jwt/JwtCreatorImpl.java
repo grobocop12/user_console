@@ -24,8 +24,8 @@ import static java.util.Collections.singletonList;
 @Service
 @RequiredArgsConstructor
 public class JwtCreatorImpl implements JwtCreator {
-    private static final long FIFTEEN_MINUTES_IN_MILLISECONDS = 15 * 60 * 1000;
-    private static final long ONE_HOUR_IN_MILLISECONDS = 60 * 60 * 1000;
+    private static final long FIVE_MINUTES = 5 * 60 * 1000;
+    private static final long FIFTEEN_MINUTES = 15 * 60 * 1000;
     private final static String JWT_AUTHORITIES_CLAIM = "authorities";
 
     private final UsernameAndPasswordAuthenticator authenticator;
@@ -67,8 +67,8 @@ public class JwtCreatorImpl implements JwtCreator {
                 .username(username)
                 .authorities(authorities)
                 .issuedAt(currentDate)
-                .accessTokenExpiration(new Date(currentDate.getTime() + FIFTEEN_MINUTES_IN_MILLISECONDS))
-                .refreshTokenExpiration(new Date(currentDate.getTime() + ONE_HOUR_IN_MILLISECONDS))
+                .accessTokenExpiration(new Date(currentDate.getTime() + FIVE_MINUTES))
+                .refreshTokenExpiration(new Date(currentDate.getTime() + FIFTEEN_MINUTES))
                 .build();
     }
 
