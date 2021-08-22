@@ -23,8 +23,8 @@ import static java.util.Collections.singletonList;
 
 @Service
 @RequiredArgsConstructor
-public class JwtServiceImpl implements JwtService {
-    private static final long FIFTEEN_MINUTES_IN_MILLISECONDS = 1 * 60 * 1000;
+public class JwtCreatorImpl implements JwtCreator {
+    private static final long FIFTEEN_MINUTES_IN_MILLISECONDS = 15 * 60 * 1000;
     private static final long ONE_HOUR_IN_MILLISECONDS = 60 * 60 * 1000;
     private final static String JWT_AUTHORITIES_CLAIM = "authorities";
 
@@ -32,19 +32,18 @@ public class JwtServiceImpl implements JwtService {
     private final KeyProvider keyProvider;
     private final DateAndTimeProvider dateAndTimeProvider;
     private final UserDetailsService userDetailsService;
+    private final TokenService tokenService;
 
     @Override
     public TokenResponse createAccessTokenAndRefreshToken(final String username, final String password) {
         final Authentication authentication = authenticateUser(username, password);
-        final TokenInternalRequest internalRequest = prepareInternalRequest(authentication.getName(), authentication.getAuthorities());
-        return processInternalRequest(internalRequest);
+        return createAndSaveTokens(authentication.getName(), authentication.getAuthorities());
     }
 
     @Override
     public TokenResponse refreshToken(final String username) {
         final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-        final TokenInternalRequest internalRequest = prepareInternalRequest(userDetails.getUsername(), userDetails.getAuthorities());
-        return processInternalRequest(internalRequest);
+        return createAndSaveTokens(userDetails.getUsername(), userDetails.getAuthorities());
     }
 
     private Authentication authenticateUser(final String username, final String password) {
@@ -53,6 +52,13 @@ public class JwtServiceImpl implements JwtService {
         } catch (BadCredentialsException e) {
             throw new AuthenticationException("Wrong username or password", e);
         }
+    }
+
+    private TokenResponse createAndSaveTokens(String username, Collection<? extends GrantedAuthority> authorities) {
+        final TokenInternalRequest internalRequest = prepareInternalRequest(username, authorities);
+        final TokenEntity tokenEntity = processInternalRequest(internalRequest);
+        tokenService.saveNewTokenAndBlacklistOld(tokenEntity);
+        return prepareResponse(tokenEntity);
     }
 
     private TokenInternalRequest prepareInternalRequest(String username, Collection<? extends GrantedAuthority> authorities) {
@@ -66,17 +72,7 @@ public class JwtServiceImpl implements JwtService {
                 .build();
     }
 
-    private TokenResponse processInternalRequest(TokenInternalRequest internalRequest) {
-        final TokenEntity tokenEntity = createTokenEntity(internalRequest);
-        return TokenResponse.builder()
-                .accessToken(tokenEntity.getAccessToken())
-                .refreshToken(tokenEntity.getRefreshToken())
-                .accessTokenExpiration(internalRequest.getAccessTokenExpiration().getTime())
-                .refreshTokenExpiration(internalRequest.getRefreshTokenExpiration().getTime())
-                .build();
-    }
-
-    private TokenEntity createTokenEntity(TokenInternalRequest internalRequest) {
+    private TokenEntity processInternalRequest(TokenInternalRequest internalRequest) {
         final String accessToken = Jwts.builder()
                 .setSubject(internalRequest.getUsername())
                 .claim(JWT_AUTHORITIES_CLAIM, internalRequest.getAuthorities())
@@ -95,8 +91,20 @@ public class JwtServiceImpl implements JwtService {
                 .username(internalRequest.getUsername())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .issuedAt(internalRequest.getIssuedAt())
                 .accessTokenExpiration(internalRequest.getAccessTokenExpiration())
                 .refreshTokenExpiration(internalRequest.getRefreshTokenExpiration())
+                .enabled(true)
+                .build();
+
+    }
+
+    private TokenResponse prepareResponse(TokenEntity tokenEntity) {
+        return TokenResponse.builder()
+                .accessToken(tokenEntity.getAccessToken())
+                .refreshToken(tokenEntity.getRefreshToken())
+                .accessTokenExpiration(tokenEntity.getAccessTokenExpiration().getTime())
+                .refreshTokenExpiration(tokenEntity.getRefreshTokenExpiration().getTime())
                 .build();
     }
 

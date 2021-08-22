@@ -29,7 +29,7 @@ public class JwtTokenVerifier extends OncePerRequestFilter {
     private final static String AUTHORIZATION_HEADER = "Authorization";
 
     private final KeyProvider keyProvider;
-    private final BlacklistedTokenService blacklistedTokenService;
+    private final TokenService tokenService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -44,7 +44,7 @@ public class JwtTokenVerifier extends OncePerRequestFilter {
                     .setSigningKey(keyProvider.getKey())
                     .build()
                     .parseClaimsJws(token);
-            if (blacklistedTokenService.isBlackListed(claimsJws.getBody().getSubject(), token)) {
+            if (tokenService.isBlackListed(claimsJws.getBody().getSubject(), token)) {
                 throw new IllegalStateException("Invalid token.");
             }
             setAuthentication(claimsJws.getBody());
