@@ -3,6 +3,8 @@ package com.grobocop.userconsole.security.jwt;
 import com.grobocop.userconsole.data.TokenEntity;
 import com.grobocop.userconsole.data.TokenRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
@@ -18,11 +20,12 @@ public class TokenService {
 
     @Transactional
     public TokenEntity saveNewTokenAndBlacklistOld(final TokenEntity newToken) {
-        blacklistTokensOfUser(newToken.getUsername());
+        disableTokensOfUser(newToken.getUsername());
         return tokenRepository.save(newToken);
     }
 
-    public void blacklistTokensOfUser(final String username) {
+    @CacheEvict(value = "blacklist", key = "#username")
+    public void disableTokensOfUser(final String username) {
         final List<TokenEntity> tokens = tokenRepository.findAllByUsernameAndEnabled(username, true)
                 .stream()
                 .peek(t -> t.setEnabled(false))
@@ -30,10 +33,9 @@ public class TokenService {
         tokenRepository.saveAll(tokens);
     }
 
-    public boolean isBlackListed(final String username, final String token) {
-        Collection<TokenEntity> tokens = tokenRepository.findAllByUsernameAndEnabled(username, false);
-        return tokens.stream().anyMatch(t -> t.getAccessToken().equals(token)
-                || t.getRefreshToken().equals(token));
+    @Cacheable(value = "blacklist", key = "#username")
+    public Collection<TokenEntity> findDisabledTokensOfUser(final String username) {
+        return tokenRepository.findAllByUsernameAndEnabled(username, false);
     }
 
     public Collection<TokenEntity> findTokensExpiringBefore(Date date) {

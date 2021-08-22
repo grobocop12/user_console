@@ -34,7 +34,7 @@ public class AuthenticationApi {
     @GetMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request) {
         final Principal userPrincipal = request.getUserPrincipal();
-        tokenService.blacklistTokensOfUser(userPrincipal.getName());
+        tokenService.disableTokensOfUser(userPrincipal.getName());
         return ResponseEntity.ok().build();
     }
 }
