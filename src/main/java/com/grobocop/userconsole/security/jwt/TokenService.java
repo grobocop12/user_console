@@ -45,4 +45,8 @@ public class TokenService {
     public void deleteTokens(Collection<TokenEntity> tokens) {
         tokenRepository.deleteAll(tokens);
     }
+
+    public boolean checkIfUserHasNonExpiredAccessTokens(String username) {
+        return tokenRepository.findAllByUsernameAndEnabled(username, true).size() > 0;
+    }
 }

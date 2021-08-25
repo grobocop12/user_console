@@ -2,6 +2,7 @@ package com.grobocop.userconsole.security.jwt;
 
 import com.grobocop.userconsole.data.TokenEntity;
 import com.grobocop.userconsole.exception.AuthenticationException;
+import com.grobocop.userconsole.exception.RefreshException;
 import com.grobocop.userconsole.security.KeyProvider;
 import com.grobocop.userconsole.security.UsernameAndPasswordAuthenticator;
 import com.grobocop.userconsole.util.DateAndTimeProvider;
@@ -42,6 +43,7 @@ public class JwtCreatorImpl implements JwtCreator {
 
     @Override
     public TokenResponse refreshToken(final String username) {
+        checkIfUsersAccessTokenExpired(username);
         final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         return createAndSaveTokens(userDetails.getUsername(), userDetails.getAuthorities());
     }
@@ -51,6 +53,12 @@ public class JwtCreatorImpl implements JwtCreator {
             return authenticator.authenticate(username, password);
         } catch (BadCredentialsException e) {
             throw new AuthenticationException("Wrong username or password", e);
+        }
+    }
+
+    private void checkIfUsersAccessTokenExpired(String username) {
+        if(tokenService.checkIfUserHasNonExpiredAccessTokens(username)) {
+            throw new RefreshException("User: "+ username + " still has valid tokens.");
         }
     }
 
